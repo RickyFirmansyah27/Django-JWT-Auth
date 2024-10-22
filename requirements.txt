@@ -1,0 +1,9 @@
+django
+pymysql
+djangorestframework
+django-cors-headers
+python-decouple
+cryptography
+colorlog
+djangorestframework-simplejwt
+pyjwt
