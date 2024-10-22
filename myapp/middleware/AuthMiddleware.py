@@ -3,6 +3,9 @@ from myapp.service.authService import AuthService
 from django.conf import settings
 from functools import wraps
 from myapp.response.helper import BaseResponse
+import logging
+# Configure logging
+logger = logging.getLogger(__name__)
 
 def AuthMiddleware(view_func):
     @wraps(view_func)
@@ -36,6 +39,8 @@ def AuthMiddleware(view_func):
         except jwt.InvalidTokenError:
             return BaseResponse('unauthorized', 'Invalid token', None)
         except Exception as e:
-            return BaseResponse('error', 'Internal server error', None)
+            logger.error('[Middleware.Exception] - Error: %s', str(e), exc_info=True)
+            return BaseResponse(None, f'Internal server error: {str(e)}', None)
+
     
     return wrapped_view

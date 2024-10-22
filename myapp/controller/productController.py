@@ -5,22 +5,26 @@ from rest_framework.decorators import api_view
 from myapp.models.productModel import ProductModel
 from myapp.dto.productDTO import productDTO
 from myapp.response.helper import BaseResponse
-from myapp.middleware.AuthMiddleware import AuthMiddleware 
+from myapp.middleware.AuthMiddleware import AuthMiddleware
 from django.views.decorators.http import require_http_methods
+
 # Configure logging
 logger = logging.getLogger(__name__)
 
-@require_http_methods(['GET', 'PUT', 'DELETE'])
+@require_http_methods(['GET'])
 @AuthMiddleware
-def getProducts(request):
-    if request.method == 'GET':
-        products = ProductModel.objects.all()
-        response = productDTO(products, many=True)
-        logger.info('[ProductController] - Fetched all products successfully.', extra={'data': response.data})
-        return BaseResponse('success', 'Successfully fetched products', response.data)
+def get_products(request):
+    products = ProductModel.objects.all()
+    response = productDTO(products, many=True)
+    logger.info('[ProductController] - Fetched all products successfully.', extra={'data': response.data})
+    return BaseResponse('success', 'Successfully fetched products', response.data)
 
-    elif request.method == 'PUT':
+@require_http_methods(['PUT'])
+@AuthMiddleware
+def update_product(request):
+    try:
         data = JSONParser().parse(request)
+        print(data)
         product = get_object_or_404(ProductModel, id=data.get('id'))
 
         product.name = data.get('name', product.name)
@@ -31,12 +35,18 @@ def getProducts(request):
         response = productDTO(product)
         return BaseResponse('success', 'Successfully updated product', response.data)
 
-    elif request.method == 'DELETE':
-        data = JSONParser().parse(request)
-        product = get_object_or_404(ProductModel, id=data.get('id'))
+    except Exception as err:
+        logger.error('[ProductController] - Error: %s', str(err), exc_info=True)
+        return BaseResponse(None, f'Internal server error: {str(err)}', None)
 
-        product.delete()
-        return BaseResponse('success', 'Successfully deleted product', None)
+@require_http_methods(['DELETE'])
+@AuthMiddleware
+def delete_product(request):
+    data = JSONParser().parse(request)
+    product = get_object_or_404(ProductModel, id=data.get('id'))
+
+    product.delete()
+    return BaseResponse('success', 'Successfully deleted product', None)
 
 @require_http_methods(['GET'])
 @AuthMiddleware
